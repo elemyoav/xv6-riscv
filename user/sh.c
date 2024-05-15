@@ -170,7 +170,7 @@ main(void)
     if(fork1() == 0)
       runcmd(parsecmd(buf));
     wait(0, buffer);
-    printf("%s", buffer);
+    printf("%s\n", buffer);
   }
   exit(0, "");
 }
