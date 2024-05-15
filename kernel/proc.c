@@ -56,6 +56,7 @@ procinit(void)
       p->state = UNUSED;
       p->kstack = KSTACK((int) (p - proc));
       p->affinity_mask = 0;
+      p->effective_affinity_mask = 0;
   }
 }
 
@@ -126,6 +127,7 @@ found:
   p->pid = allocpid();
   p->state = USED;
   p->affinity_mask = 0;
+  p->effective_affinity_mask = 0;
 
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
@@ -172,6 +174,7 @@ freeproc(struct proc *p)
   p->xstate = 0;
   p->state = UNUSED;
   p->affinity_mask = 0;
+  p->effective_affinity_mask = 0;
 }
 
 // Create a user page table for a given process, with no user memory,
@@ -324,6 +327,7 @@ fork(void)
   acquire(&np->lock);
   np->state = RUNNABLE;
   np->affinity_mask = p->affinity_mask;
+  np->effective_affinity_mask = p->effective_affinity_mask;
   release(&np->lock);
 
   return pid;
@@ -462,7 +466,16 @@ scheduler(void)
         // Switch to chosen process.  It is the process's job
         // to release its lock and then reacquire it
         // before jumping back to us.
-        if(!p->affinity_mask || p->affinity_mask & (1 << cpuid())){
+        if(!p-> affinity_mask){
+          p->state = RUNNING;
+          c->proc = p;
+          swtch(&c->context, &p->context);
+
+          // Process is done running for now.
+          // It should have changed its p->state before coming back.
+          c->proc = 0;
+        }
+        else if(p->effective_affinity_mask & (1 << cpuid())){
           printf("Scheduler: Running process %d on CPU %d\n", p->pid, cpuid());
           
           p->state = RUNNING;
@@ -513,6 +526,14 @@ yield(void)
   struct proc *p = myproc();
   acquire(&p->lock);
   p->state = RUNNABLE;
+  
+  if(p->affinity_mask){ 
+    p->effective_affinity_mask -= (1 << cpuid()); // remove the current CPU from the effective affinity mask
+    if (!p->effective_affinity_mask) {
+      p->effective_affinity_mask = p->affinity_mask;
+    }
+  }
+
   sched();
   release(&p->lock);
 }

@@ -5,9 +5,9 @@
 int
 main(int argc, char *argv[])
 {
-  int mask =7;
+  int mask =5;
   set_affinity_mask(mask);
   for(;;){
-    printf("Hello I am %d\n", getpid());
+    // printf("Hello I am %d\n", getpid());
   }
 }
