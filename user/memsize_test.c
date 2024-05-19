@@ -13,5 +13,5 @@ main(int argc, char *argv[])
     free(p);
     printf("memsize: %dB\n", memsize());
     
-    exit(0);
+    exit(0, "");
 }
