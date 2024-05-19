@@ -95,6 +95,15 @@ sys_uptime(void)
   return xticks;
 }
 
+uint64
+sys_set_affinity_mask(void)
+{
+  int mask;
+  argint(0, &mask);
+  myproc()->affinity_mask = mask;
+  return 0;
+}
+
 // Return the size of the physical memory (in bytes)
 uint64
 sys_memsize(void)
